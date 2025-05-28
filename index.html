@@ -20,6 +20,7 @@
         .tooltip .tooltiptext { visibility: hidden; width: 140px; background-color: #555; color: #fff; text-align: center; border-radius: 6px; padding: 5px 0; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -70px; opacity: 0; transition: opacity 0.3s; }
         .tooltip .tooltiptext::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #555 transparent transparent transparent; }
         .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+        .error-message { color: red; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -31,6 +32,7 @@
             <span class="tooltiptext" id="myTooltip">Copy to clipboard</span>
         </div>
         <button class="copy-button" onclick="copyKey(document.getElementById('keyToCopy').innerText, this)">Copy Key</button>
+        <p class="error-message" id="errorMessage"></p> <!-- Added for error display -->
 
         <div class="instructions">
             <p><strong>Next Steps:</strong></p>
@@ -44,12 +46,17 @@
         </div>
     </div>
     <script>
-        // Supabase client setup
+        // Supabase client setup - USING YOUR PROVIDED CREDENTIALS
         const SUPABASE_URL = 'https://aqqcodxpjtxkalqtvxxm.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcWNvZHhwanR4a2FscXR2eHhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0NDY0MzMsImV4cCI6MjA2NDAyMjQzM30.UCJeInyn52NexDk2VS9SpNMBeU7qKoJdZIJV9Xx7gWU';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcWNvZHhwanR4a2FscXR2eXhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0NDY0MzMsImV4cCI6MjA2NDAyMjQzM30.UCJeInyn52NexDk2VS9SpNMBeU7qKoJdZIJV9Xx7gWU';
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Debugging line: Check if supabase client initialized.
+        console.log("Supabase Client Initialized. Supabase URL:", SUPABASE_URL);
+
         function generateUUID() {
+            // A simple UUID generator. Modern browsers also have crypto.randomUUID()
+            // For broader compatibility, this is fine.
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
@@ -58,25 +65,33 @@
 
         async function generateAndDisplayKey() {
             const keyElement = document.getElementById('keyToCopy');
+            const errorMessageElement = document.getElementById('errorMessage');
             keyElement.innerText = 'Generating...';
+            errorMessageElement.innerText = ''; // Clear previous errors
 
             try {
                 const newKey = generateUUID();
+                console.log("Attempting to insert key with ID:", newKey); // Debugging
+
+                // Direct insert into the 'access_keys' table
                 const { data, error } = await supabase
                     .from('access_keys')
                     .insert([{ id: newKey, is_used: false, used_by_discord_id: null, expires_at: null }]);
 
                 if (error) {
-                    console.error('Error inserting key:', error);
-                    keyElement.innerText = 'Error: ' + error.message;
-                    alert('Failed to generate key. Please try again. Error: ' + error.message);
+                    console.error('Supabase Error inserting key:', error);
+                    keyElement.innerText = 'Error Generating Key';
+                    errorMessageElement.innerText = 'Error: ' + (error.message || 'Unknown Supabase error. Check browser console.');
+                    // Log the full error to console for more details
+                    console.error("Full Supabase error object:", error);
                 } else {
+                    console.log('Key successfully inserted:', newKey); // Debugging
                     keyElement.innerText = newKey;
                 }
             } catch (e) {
-                console.error('Unexpected error:', e);
+                console.error('Unexpected JavaScript error:', e);
                 keyElement.innerText = 'Fatal Error!';
-                alert('An unexpected error occurred: ' + e.message);
+                errorMessageElement.innerText = 'An unexpected error occurred: ' + (e.message || 'Unknown error.');
             }
         }
 
