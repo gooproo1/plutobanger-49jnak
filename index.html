@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Korbi Key</title>
+    <!-- Include the Supabase client library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background-color: #f0f2f5; color: #333; }
+        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 500px; width: 90%; }
+        h1 { color: #28a745; margin-bottom: 20px; }
+        p { margin-bottom: 15px; line-height: 1.6; }
+        .key-box { background-color: #e9ecef; padding: 15px 25px; border-radius: 6px; border: 1px dashed #ced4da; font-size: 1.2em; font-weight: bold; word-break: break-all; margin-bottom: 25px; cursor: pointer; }
+        .key-box:hover { background-color: #e2e6ea; }
+        .instructions { text-align: left; border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px; }
+        .instructions ol { list-style-position: inside; padding-left: 0; }
+        .instructions li { margin-bottom: 8px; }
+        .copy-button { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; }
+        .copy-button:hover { background-color: #0056b3; }
+        .tooltip { position: relative; display: inline-block; }
+        .tooltip .tooltiptext { visibility: hidden; width: 140px; background-color: #555; color: #fff; text-align: center; border-radius: 6px; padding: 5px 0; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -70px; opacity: 0; transition: opacity 0.3s; }
+        .tooltip .tooltiptext::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #555 transparent transparent transparent; }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 Your Korbi Access Key!</h1>
+        <p>Thank you for completing the ad. Here is your unique 20-minute access key:</p>
+        <div class="key-box tooltip" onclick="copyKey(document.getElementById('keyToCopy').innerText, this)">
+            <span id="keyToCopy">Generating key...</span>
+            <span class="tooltiptext" id="myTooltip">Copy to clipboard</span>
+        </div>
+        <button class="copy-button" onclick="copyKey(document.getElementById('keyToCopy').innerText, this)">Copy Key</button>
+
+        <div class="instructions">
+            <p><strong>Next Steps:</strong></p>
+            <ol>
+                <li>Copy the key above.</li>
+                <li>Go back to the Discord channel where you use Korbi.</li>
+                <li>Type `>enterkey ` followed by your copied key.</li>
+                <li>You will then have 20 minutes of access to the `>korgi` command!</li>
+            </ol>
+            <p>Enjoy using Korbi!</p>
+        </div>
+    </div>
+    <script>
+        // Supabase client setup
+        const SUPABASE_URL = 'https://aqqcodxpjtxkalqtvxxm.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcWNvZHhwanR4a2FscXR2eHhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0NDY0MzMsImV4cCI6MjA2NDAyMjQzM30.UCJeInyn52NexDk2VS9SpNMBeU7qKoJdZIJV9Xx7gWU';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        async function generateAndDisplayKey() {
+            const keyElement = document.getElementById('keyToCopy');
+            keyElement.innerText = 'Generating...';
+
+            try {
+                const newKey = generateUUID();
+                const { data, error } = await supabase
+                    .from('access_keys')
+                    .insert([{ id: newKey, is_used: false, used_by_discord_id: null, expires_at: null }]);
+
+                if (error) {
+                    console.error('Error inserting key:', error);
+                    keyElement.innerText = 'Error: ' + error.message;
+                    alert('Failed to generate key. Please try again. Error: ' + error.message);
+                } else {
+                    keyElement.innerText = newKey;
+                }
+            } catch (e) {
+                console.error('Unexpected error:', e);
+                keyElement.innerText = 'Fatal Error!';
+                alert('An unexpected error occurred: ' + e.message);
+            }
+        }
+
+        // Call this function when the page loads
+        window.onload = generateAndDisplayKey;
+
+        function copyKey(key, element) {
+            navigator.clipboard.writeText(key).then(function() {
+                var tooltip = element.querySelector('#myTooltip') || document.getElementById('myTooltip');
+                var originalText = tooltip.innerHTML;
+                tooltip.innerHTML = "Copied!";
+                setTimeout(function() {
+                    tooltip.innerHTML = originalText;
+                }, 2000);
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+                alert('Failed to copy key. Please manually select and copy it: ' + key);
+            });
+        }
+    </script>
+</body>
+</html>
